@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionClaim Investigator — Visual Dashboard</title>
+    <meta name="description" content="Multi-agent AI forensic claims investigation pipeline with real-time visual evidence board.">
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- ── HEADER ── -->
+        <header class="dashboard-header">
+            <div class="header-logo">
+                <span class="logo-icon">🔍</span>
+                <div class="logo-text">
+                    <h1>VisionClaim Investigator</h1>
+                    <p>AI-Powered Forensic Claims Investigation Pipeline</p>
+                </div>
+            </div>
+            <div class="header-center">
+                <!-- Token Usage Meter -->
+                <div class="token-meter" id="tokenMeterWidget">
+                    <div class="token-meter-label">
+                        <span class="token-icon">⚡</span>
+                        <span>Token Budget</span>
+                        <strong id="tokenUsagePct">0%</strong>
+                    </div>
+                    <div class="token-track">
+                        <div class="token-fill" id="tokenFill" style="width:0%"></div>
+                    </div>
+                    <div class="token-detail" id="tokenDetail">— / — tokens</div>
+                </div>
+            </div>
+            <div class="header-status">
+                <span class="pulse-indicator green" id="wsStatusDot"></span>
+                <span id="wsStatusText">Dashboard Ready</span>
+            </div>
+        </header>
+
+        <!-- ── MAIN CONTENT GRID ── -->
+        <div class="dashboard-grid">
+
+            <!-- COLUMN 1: INPUT PANEL -->
+            <section class="grid-panel input-panel">
+                <div class="panel-header">
+                    <h2>Claim Intake</h2>
+                </div>
+                <div class="panel-content">
+                    <form id="investigateForm">
+                        <div class="form-group">
+                            <label for="userIdInput">User ID / Claimant</label>
+                            <input type="text" id="userIdInput" placeholder="e.g., user_test or user_001" required value="user_test">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="claimObjectSelect">Claim Object Category</label>
+                            <select id="claimObjectSelect" required>
+                                <option value="car">Car / Vehicle</option>
+                                <option value="laptop">Laptop / Device</option>
+                                <option value="package" selected>Package / Shipment</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="claimTextTextarea">Customer Conversation / Claim Text</label>
+                            <textarea id="claimTextTextarea" placeholder="Enter user's conversation details..." required>My earbud charging case is damaged</textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Visual Evidence (Upload Image)</label>
+                            <div class="drop-zone" id="imageDropZone">
+                                <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
+                                <div class="drop-zone-prompt">
+                                    <span class="upload-icon">📸</span>
+                                    <p>Drag &amp; drop image here or <strong>browse</strong></p>
+                                    <span class="file-limits">Supports JPEG, PNG, WEBP</span>
+                                </div>
+                                <div class="drop-zone-thumb" id="dropZoneThumb" style="display: none;">
+                                    <img src="" id="thumbImage" alt="Upload Preview">
+                                    <button type="button" class="remove-thumb-btn" id="removeThumbBtn">✕</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="runButton">
+                                <span class="btn-spinner" id="runSpinner" style="display: none;"></span>
+                                <span class="btn-text" id="runBtnText">Run Investigation</span>
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="replayButton" disabled>▶ Replay Flow</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- COLUMN 2: INVESTIGATION TIMELINE -->
+            <section class="grid-panel timeline-panel">
+                <div class="panel-header">
+                    <h2>Investigation Pipeline</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="pipeline-flow">
+                        <!-- Node 1: ClaimExtractor -->
+                        <div class="timeline-node" id="node-ClaimExtractor" data-agent="ClaimExtractor">
+                            <div class="node-status-marker"></div>
+                            <div class="node-body">
+                                <div class="node-meta">
+                                    <h3>1. Claim Extractor</h3>
+                                    <div class="node-right">
+                                        <span class="node-duration" id="dur-ClaimExtractor"></span>
+                                        <span class="node-badge">Idle</span>
+                                    </div>
+                                </div>
+                                <p class="node-desc">Extracts parts &amp; damage type from claim conversation.</p>
+                                <div class="node-summary" id="summary-ClaimExtractor"></div>
+                                <div class="node-json-toggle" id="toggle-ClaimExtractor" style="display:none;">
+                                    <button class="view-json-btn" onclick="toggleJson('ClaimExtractor')">View JSON ▾</button>
+                                    <pre class="node-json-block" id="json-ClaimExtractor" style="display:none;"></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Node 2: EvidenceRequirement -->
+                        <div class="timeline-node" id="node-EvidenceRequirement" data-agent="EvidenceRequirement">
+                            <div class="node-status-marker"></div>
+                            <div class="node-body">
+                                <div class="node-meta">
+                                    <h3>2. Evidence Agent</h3>
+                                    <div class="node-right">
+                                        <span class="node-duration" id="dur-EvidenceRequirement"></span>
+                                        <span class="node-badge">Idle</span>
+                                    </div>
+                                </div>
+                                <p class="node-desc">Maps extracted parts to required visual evidence standards.</p>
+                                <div class="node-summary" id="summary-EvidenceRequirement"></div>
+                                <div class="node-json-toggle" id="toggle-EvidenceRequirement" style="display:none;">
+                                    <button class="view-json-btn" onclick="toggleJson('EvidenceRequirement')">View JSON ▾</button>
+                                    <pre class="node-json-block" id="json-EvidenceRequirement" style="display:none;"></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Node 3: ImageAnalyzer -->
+                        <div class="timeline-node" id="node-ImageAnalyzer" data-agent="ImageAnalyzer">
+                            <div class="node-status-marker"></div>
+                            <div class="node-body">
+                                <div class="node-meta">
+                                    <h3>3. Image Analyzer</h3>
+                                    <div class="node-right">
+                                        <span class="node-duration" id="dur-ImageAnalyzer"></span>
+                                        <span class="node-badge">Idle</span>
+                                    </div>
+                                </div>
+                                <p class="node-desc">Evaluates image validity, contents, and checks for damage.</p>
+                                <div class="node-summary" id="summary-ImageAnalyzer"></div>
+                                <div class="node-json-toggle" id="toggle-ImageAnalyzer" style="display:none;">
+                                    <button class="view-json-btn" onclick="toggleJson('ImageAnalyzer')">View JSON ▾</button>
+                                    <pre class="node-json-block" id="json-ImageAnalyzer" style="display:none;"></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Node 4: CoverageAnalyzer -->
+                        <div class="timeline-node" id="node-CoverageAnalyzer" data-agent="CoverageAnalyzer">
+                            <div class="node-status-marker"></div>
+                            <div class="node-body">
+                                <div class="node-meta">
+                                    <h3>4. Coverage Agent</h3>
+                                    <div class="node-right">
+                                        <span class="node-duration" id="dur-CoverageAnalyzer"></span>
+                                        <span class="node-badge">Idle</span>
+                                    </div>
+                                </div>
+                                <p class="node-desc">Cross-references visible parts with required parts checklist.</p>
+                                <div class="node-summary" id="summary-CoverageAnalyzer"></div>
+                                <div class="node-json-toggle" id="toggle-CoverageAnalyzer" style="display:none;">
+                                    <button class="view-json-btn" onclick="toggleJson('CoverageAnalyzer')">View JSON ▾</button>
+                                    <pre class="node-json-block" id="json-CoverageAnalyzer" style="display:none;"></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Node 5: HistoryRisk -->
+                        <div class="timeline-node" id="node-HistoryRisk" data-agent="HistoryRisk">
+                            <div class="node-status-marker"></div>
+                            <div class="node-body">
+                                <div class="node-meta">
+                                    <h3>5. History Agent</h3>
+                                    <div class="node-right">
+                                        <span class="node-duration" id="dur-HistoryRisk"></span>
+                                        <span class="node-badge">Idle</span>
+                                    </div>
+                                </div>
+                                <p class="node-desc">Evaluates risk profiles based on user historical filing frequency.</p>
+                                <div class="node-summary" id="summary-HistoryRisk"></div>
+                                <div class="node-json-toggle" id="toggle-HistoryRisk" style="display:none;">
+                                    <button class="view-json-btn" onclick="toggleJson('HistoryRisk')">View JSON ▾</button>
+                                    <pre class="node-json-block" id="json-HistoryRisk" style="display:none;"></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Node 6: Verdict -->
+                        <div class="timeline-node" id="node-Verdict" data-agent="Verdict">
+                            <div class="node-status-marker"></div>
+                            <div class="node-body">
+                                <div class="node-meta">
+                                    <h3>6. Verdict Agent</h3>
+                                    <div class="node-right">
+                                        <span class="node-duration" id="dur-Verdict"></span>
+                                        <span class="node-badge">Idle</span>
+                                    </div>
+                                </div>
+                                <p class="node-desc">Runs self-critique checks and outputs the final 14-column verdict.</p>
+                                <div class="node-summary" id="summary-Verdict"></div>
+                                <div class="node-json-toggle" id="toggle-Verdict" style="display:none;">
+                                    <button class="view-json-btn" onclick="toggleJson('Verdict')">View JSON ▾</button>
+                                    <pre class="node-json-block" id="json-Verdict" style="display:none;"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- COLUMN 3: EVIDENCE BOARD & PREVIEW -->
+            <section class="grid-panel evidence-panel">
+                <div class="panel-header">
+                    <h2>Evidence Board</h2>
+                </div>
+                <div class="panel-content">
+                    <!-- Image Preview Card -->
+                    <div class="preview-card card">
+                        <div class="card-title">Submitted Evidence Photo</div>
+                        <div class="preview-placeholder" id="previewPlaceholder">No image uploaded</div>
+                        <img src="" id="boardImagePreview" alt="Evidence Preview" style="display: none;">
+                    </div>
+
+                    <!-- Coverage Evidence Board Card -->
+                    <div class="board-card card">
+                        <div class="card-title">Coverage Checklists</div>
+                        <div class="coverage-bar-container">
+                            <div class="coverage-label">
+                                <span>Evidence Match Coverage</span>
+                                <strong id="coverageScoreVal">0%</strong>
+                            </div>
+                            <div class="coverage-track">
+                                <div class="coverage-fill" id="coverageScoreFill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="parts-list-group">
+                            <h4>Required Parts</h4>
+                            <ul class="parts-list" id="requiredPartsList">
+                                <li class="empty-list">No requirements set yet</li>
+                            </ul>
+                        </div>
+
+                        <div class="parts-list-group">
+                            <h4>Visible Parts (VLM Identified)</h4>
+                            <ul class="parts-list" id="visiblePartsList">
+                                <li class="empty-list">Image not analyzed yet</li>
+                            </ul>
+                        </div>
+
+                        <div class="parts-list-group">
+                            <h4>Missing Parts</h4>
+                            <ul class="parts-list" id="missingPartsList">
+                                <li class="empty-list">No checklist parsed yet</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Risk Analysis Card -->
+                    <div class="risk-card card" id="riskAnalysisCard">
+                        <div class="card-title">Risk Analysis</div>
+                        <ul class="risk-list" id="riskCheckList">
+                            <li class="risk-item risk-pending" id="risk-duplicate">
+                                <span class="risk-icon">◦</span>
+                                <span>Duplicate Evidence Detection</span>
+                            </li>
+                            <li class="risk-item risk-pending" id="risk-injection">
+                                <span class="risk-icon">◦</span>
+                                <span>Prompt Injection Check</span>
+                            </li>
+                            <li class="risk-item risk-pending" id="risk-history">
+                                <span class="risk-icon">◦</span>
+                                <span>User History Anomaly Check</span>
+                            </li>
+                            <li class="risk-item risk-pending" id="risk-authenticity">
+                                <span class="risk-icon">◦</span>
+                                <span>Image Authenticity Verified</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Adversarial Injection Alert Card -->
+                    <div class="alert-card card" id="adversarialAlertCard" style="display: none;">
+                        <div class="alert-icon">⚠️</div>
+                        <div class="alert-body">
+                            <h3>Adversarial Input Flagged</h3>
+                            <p id="alertReasonText">Claim instructions or image contains prompt injection text overrides.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ── BOTTOM PANEL ── -->
+        <div class="bottom-panel-grid">
+            <!-- FINAL VERDICT CARD -->
+            <section class="grid-panel verdict-panel">
+                <div class="panel-header">
+                    <h2>Final Investigation Verdict</h2>
+                </div>
+                <div class="panel-content">
+                    <!-- Investigation Summary -->
+                    <div class="investigation-summary" id="investigationSummary" style="display:none;">
+                        <div class="summary-title">Investigation Summary</div>
+                        <div class="summary-grid">
+                            <div class="summary-item"><span class="summary-label">Claim</span><strong id="sumClaim">—</strong></div>
+                            <div class="summary-item"><span class="summary-label">Evidence Coverage</span><strong id="sumCoverage">—</strong></div>
+                            <div class="summary-item"><span class="summary-label">Visible Objects</span><strong id="sumVisible">—</strong></div>
+                            <div class="summary-item"><span class="summary-label">Risk Level</span><strong id="sumRisk">—</strong></div>
+                            <div class="summary-item"><span class="summary-label">Final Assessment</span><strong id="sumAssessment">—</strong></div>
+                        </div>
+                        <!-- Coverage vs damage borderline note -->
+                        <div class="borderline-note" id="borderlineNote" style="display:none;">
+                            <span class="borderline-icon">ℹ️</span>
+                            Evidence coverage was sufficient, but the claimed damage could not be verified from the submitted images.
+                        </div>
+                    </div>
+
+                    <div class="verdict-grid">
+                        <div class="verdict-status-container">
+                            <div class="verdict-status-badge status-empty" id="verdictStatusBadge">NOT EVALUATED</div>
+                            <div class="verdict-item">
+                                <span class="label">Overall Severity</span>
+                                <strong class="severity-badge sev-none" id="verdictSeverityVal">Unknown</strong>
+                            </div>
+                            <div class="verdict-item">
+                                <span class="label">Evidence Standard Met</span>
+                                <strong id="verdictEvidenceMetVal">Unknown</strong>
+                            </div>
+                        </div>
+                        <div class="verdict-details-container">
+                            <div class="verdict-details-row">
+                                <div class="verdict-item">
+                                    <span class="label">Refined Claim Part</span>
+                                    <strong id="verdictPartVal">Unknown</strong>
+                                </div>
+                                <div class="verdict-item">
+                                    <span class="label">Refined Issue Type</span>
+                                    <strong id="verdictIssueVal">Unknown</strong>
+                                </div>
+                                <div class="verdict-item">
+                                    <span class="label">Supporting Image IDs</span>
+                                    <strong id="verdictImageIdsVal">Unknown</strong>
+                                </div>
+                            </div>
+                            <div class="verdict-item justification-item">
+                                <span class="label">Verdict Justification</span>
+                                <p id="verdictJustificationText">The dashboard will display the pipeline verdict justification once the run completes successfully.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CONSOLE LOG FEED -->
+            <section class="grid-panel console-panel">
+                <div class="panel-header">
+                    <h2>Diagnostic Console Log</h2>
+                    <button class="clear-console-btn" id="clearConsoleBtn">Clear</button>
+                </div>
+                <div class="panel-content console-content" id="consoleLogs">
+                    <div class="log-line system-line">[SYSTEM] Ready to investigate. Enter details and upload evidence above.</div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- ── REASONING DETAIL INSPECTOR MODAL ── -->
+    <div class="modal" id="inspectorModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalAgentTitle">Agent Output Inspector</h2>
+                <button class="close-modal-btn" id="closeModalBtn">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="inspector-section">
+                    <h4>Overview Reasoning</h4>
+                    <p id="modalAgentReasoning">No details available for this agent node.</p>
+                </div>
+                <div class="inspector-section">
+                    <h4>Parsed Output Payload</h4>
+                    <pre class="json-display"><code id="modalAgentJson">{}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
