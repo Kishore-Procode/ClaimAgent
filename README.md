@@ -1,4 +1,4 @@
-# VisionClaim Investigator
+# ClaimAgent Investigator
 
 **An AI-powered forensic claims investigation system that determines whether visual evidence actually supports an insurance damage claim.**
 
