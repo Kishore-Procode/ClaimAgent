@@ -82,6 +82,17 @@ class EvidenceRequirementAgent(BaseAgent):
             self.log(f"Package evidence override: required_parts={required_parts}, damage_types={required_types}")
             return context
 
+        # Special fallback for unknown parts with known damage to avoid vague LLM requirements
+        if extracted.object_part.lower() == "unknown":
+            if extracted.issue_type.lower() == "dent":
+                context.requirements = EvidenceRequirement(
+                    required_parts=["visible_damaged_panel"],
+                    required_damage_types=["dent"],
+                    minimum_images_needed=1,
+                )
+                self.log(f"Rule-based fallback (unknown dent): {context.requirements.required_parts}")
+                return context
+
         # Try rule-based lookup first
         rule = PART_EVIDENCE_RULES.get(extracted.object_part.lower())
 

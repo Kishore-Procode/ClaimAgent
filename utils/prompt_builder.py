@@ -31,6 +31,7 @@ Focus only on what part is damaged and what type of damage is claimed.
 
 Claim object category: {claim_object}
 If the category is "package", the damaged part can be either a part of the packaging itself (e.g. seal, box corner, outer box, package surface) OR the contents/shipped item inside the package (e.g. earbuds, charging case, phone, laptop inside). Do not default to "package" if a more specific part or content item is named.
+If the category is for a vehicle/car and the claim states damage (like a dent) but does not specify a part, extract the object_part as "damaged_panel" or "vehicle_body" instead of "unknown".
 
 Conversation:
 {user_claim}
@@ -263,13 +264,14 @@ PRIMARY VERDICT:
 Challenge this verdict. Find reasons why it might be wrong.
 Consider: insufficient evidence, alternative explanations, unchecked assumptions.
 
+However, you MUST NOT change the original decision (supported, contradicted, not_enough_information). You may only refine the justification wording to be clearer, more professional, or to better address your own challenges. Do not invent new reasons, just improve the clarity based on the evidence.
+
 Respond with this exact JSON structure:
 {{
   "challenges": ["<challenge 1>", "<challenge 2>"],
-  "should_revise": <true|false>,
-  "revised_decision": "<supported|contradicted|not_enough_information or null>",
+  "should_revise_justification": <true|false>,
   "revised_justification": "<updated justification or null>"
 }}
 
-Only set should_revise=true if there is a strong reason to change the decision.
+Only set should_revise_justification=true if the original justification is confusing or lacks clarity.
 """

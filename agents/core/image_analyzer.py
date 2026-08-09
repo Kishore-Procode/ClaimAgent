@@ -95,16 +95,27 @@ class ImageAnalyzerAgent(BaseAgent):
                 f"damage={data.get('damages')}, valid={data.get('valid_image')}"
             )
 
+            # Extract structured fields from the model output.
+            visible_parts = self.safe_list(data.get("visible_parts"))
+            damages = self.safe_list(data.get("damages"))
+            object_matches = self.safe_bool(data.get("object_matches_claim"), False)
+            valid_image = self.safe_bool(data.get("valid_image"), False)
+
+            # If the model omits validity but clearly identifies the claimed object and visible parts,
+            # treat the image as usable. Damage may still be absent in a valid image.
+            if not valid_image and object_matches and visible_parts:
+                valid_image = True
+
             return SingleImageAnalysis(
                 image_id=img_id,
                 image_path=img_path,
                 detected_object=self.safe_str(data.get("detected_object"), "unknown"),
-                object_matches_claim=self.safe_bool(data.get("object_matches_claim"), False),
-                visible_parts=self.safe_list(data.get("visible_parts")),
-                damages=self.safe_list(data.get("damages")),
+                object_matches_claim=object_matches,
+                visible_parts=visible_parts,
+                damages=damages,
                 overall_severity=self.safe_str(data.get("overall_severity"), "unknown"),
                 image_quality=self.safe_str(data.get("image_quality"), "good"),
-                valid_image=self.safe_bool(data.get("valid_image"), True),
+                valid_image=valid_image,
                 contains_text_instruction=self.safe_bool(data.get("contains_text_instruction"), False),
                 raw_response=raw[:500],
             )

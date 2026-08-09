@@ -49,44 +49,20 @@ class CritiqueAgent(BaseAgent):
             raw = self.mm.generate_text(messages)
             data = self.parse_json(raw, fallback={})
 
-            should_revise = self.safe_bool(data.get("should_revise"), False)
-            revised_decision = data.get("revised_decision") if should_revise else None
+            should_revise = self.safe_bool(data.get("should_revise_justification"), False)
             revised_justification = data.get("revised_justification") if should_revise else None
-
-            # Validate revised decision
-            valid_statuses = {"supported", "contradicted", "not_enough_information"}
-            if revised_decision and revised_decision not in valid_statuses:
-                revised_decision = None
-                should_revise = False
 
             context.critique = CritiqueResult(
                 challenges=self.safe_list(data.get("challenges")),
-                should_revise=should_revise,
-                revised_decision=revised_decision,
+                should_revise=False, # We no longer allow the Critique Agent to override the status
+                revised_decision=None,
                 revised_justification=revised_justification,
             )
 
-            # If critique recommends revision, update the verdict
-            if should_revise and revised_decision and context.verdict:
-                self.log(
-                    f"Critique suggests revision: "
-                    f"{verdict.claim_status} → {revised_decision}"
-                )
-                context.verdict.claim_status = revised_decision
-                if revised_justification:
-                    context.verdict.claim_status_justification = (
-                        f"[Revised after self-critique] {revised_justification}"
-                    )
-                # Recalculate severity if status was revised
-                if revised_decision == "not_enough_information":
-                    context.verdict.severity = "unknown"
-                elif context.image_analysis:
-                    observed = context.image_analysis.overall_severity
-                    import config
-                    if observed in config.VALID_SEVERITIES:
-                        context.verdict.severity = observed
-                    else:
-                        context.verdict.severity = "unknown"
+            # If critique recommends justification revision, update it
+            if should_revise and revised_justification and context.verdict:
+                self.log("Critique refined the justification wording.")
+                context.verdict.claim_status_justification = revised_justification
 
             self.log(
                 f"Critique: should_revise={should_revise}, "

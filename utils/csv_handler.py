@@ -14,6 +14,54 @@ from models.schemas import ClaimRecord, Verdict
 
 logger = logging.getLogger(__name__)
 
+
+def _resolve_image_path(raw_path: str, data_dir: Path) -> str:
+    """Resolve an image path from CSV rows against the data directory.
+
+    Handles paths written as:
+    - images/foo.jpg
+    - data/foo.jpg
+    - data/images/foo.jpg
+    - foo.jpg
+
+    Falls back to a recursive filename search if the direct candidates do not exist.
+    """
+    candidate = Path(raw_path.strip())
+
+    # If the CSV already stores an absolute path, keep it.
+    if candidate.is_absolute() and candidate.exists():
+        return str(candidate)
+
+    rel_parts = candidate.parts
+    if rel_parts and rel_parts[0].lower() == data_dir.name.lower():
+        candidate = Path(*rel_parts[1:])
+
+    search_candidates = []
+
+    # Preserve nested relative paths as-is under data_dir.
+    search_candidates.append(data_dir / candidate)
+
+    # Common project layouts.
+    if candidate.parts:
+        remainder = Path(*candidate.parts[1:]) if len(candidate.parts) > 1 else Path(candidate.name)
+        search_candidates.append(data_dir / "images" / remainder)
+        search_candidates.append(data_dir / "images" / candidate.name)
+
+    # Direct filename fallback.
+    search_candidates.append(data_dir / candidate.name)
+
+    for path in search_candidates:
+        if path.exists():
+            return str(path)
+
+    # Last resort: search by filename anywhere under data_dir.
+    matches = list(data_dir.rglob(candidate.name))
+    if matches:
+        return str(matches[0])
+
+    # If nothing exists, return the most likely direct path so callers can log a useful error.
+    return str(search_candidates[0])
+
 # Exact output column order (must match output.csv header)
 OUTPUT_COLUMNS = [
     "user_id",
@@ -61,8 +109,7 @@ def load_claims(csv_path: str | Path, data_dir: str | Path) -> list[ClaimRecord]
         for p in raw_paths.split(";"):
             p = p.strip()
             if p:
-                resolved = data_dir / p
-                paths.append(str(resolved))
+                paths.append(_resolve_image_path(p, data_dir))
 
         record = ClaimRecord(
             user_id=str(row.get("user_id", "")).strip(),

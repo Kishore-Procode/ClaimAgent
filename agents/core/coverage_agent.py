@@ -81,7 +81,15 @@ PART_ALIASES: dict[str, set[str]] = {
     "shipping_label":   {"label", "shipping label", "sticker"},
     "package_surface":  {"surface", "side", "package side"},
     "package_side":     {"side", "package surface"},
+    "body_panel":       {"body panel", "fender", "front fender", "rear fender", "door", "hood", "bumper", "quarter panel", "side panel"},
+    "body_panels":      {"body panel", "fender", "front fender", "rear fender", "door", "hood", "bumper", "quarter panel", "side panel"},
+    "affected_area":    {"body panel", "fender", "front fender", "rear fender", "door", "hood", "bumper", "quarter panel", "side panel", "affected area"},
+    "vehicle_body":     {"body panel", "fender", "front fender", "rear fender", "door", "hood", "bumper", "quarter panel", "side panel", "vehicle body"},
+    "damaged_panel":    {"body panel", "fender", "front fender", "rear fender", "door", "hood", "bumper", "quarter panel", "side panel", "damaged panel", "visible damaged panel"},
+    "visible_damaged_panel": {"body panel", "fender", "front fender", "rear fender", "door", "hood", "bumper", "quarter panel", "side panel", "damaged panel", "visible damaged panel"},
+    "laptop":           {"laptop", "body", "keyboard", "display", "touchpad", "trackpad", "screen", "hinge"},
 }
+
 
 
 class CoverageAnalyzerAgent(BaseAgent):

@@ -97,12 +97,15 @@ class ContradictionAgent(BaseAgent):
         }
         coverage = context.coverage
         claimed_part = extracted.object_part.lower() if extracted.object_part else ""
-        claimed_part_is_visible = (
-            coverage is not None
-            and any(
-                claimed_part in p.lower()
-                for p in (coverage.visible_parts or [])
-            )
+        visible_parts = []
+        if coverage:
+            visible_parts = [part for part, is_visible in coverage.coverage_map.items() if is_visible]
+        elif img_analysis:
+            visible_parts = img_analysis.merged_visible_parts
+
+        claimed_part_is_visible = any(
+            claimed_part in part.lower() or part.lower() in claimed_part
+            for part in visible_parts
         )
         no_damage_detected = not observed_types  # image analysis found zero damage
 
